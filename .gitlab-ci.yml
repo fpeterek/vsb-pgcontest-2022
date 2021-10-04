@@ -1,0 +1,9 @@
+benchmark:
+  script:
+    - mkdir -p build/release
+    - cd build/release
+    - cmake -DCMAKE_BUILD_TYPE=Release ../..
+    - make -j
+    - /uploader/uploader similarity-join ./contest
+  tags:
+    - submission
