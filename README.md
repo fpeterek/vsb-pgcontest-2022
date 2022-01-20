@@ -64,7 +64,3 @@ the expected output stored in the `workloads/<workload>/output` file.
 $ ./run.sh mini | diff -s - workloads/mini/output
 ```
 
-## Windows
-
-There is a Visual Studio 2019 project available in this repository. You can also load the `CMakeLists.txt` file in
-Visual Studio. You can also use e.g. Visual Studio Code with WSL2 or something similar.
