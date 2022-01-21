@@ -20,13 +20,16 @@ void SimilarityJoin::add(const Record & record) {
 
 void SimilarityJoin::allPairs(const Record & record) {
 
-    const float div = record.size() / threshold;
-    const float floor = std::floor(div);
-
-    const std::uint32_t minSize = std::ceil(record.size() * threshold);
 
     // Hack allowing me to circumvent rounding issues...
-    const std::uint32_t maxSize = (div - floor) > 0.995f ? std::round(div) : floor;
+    const float minDiv = record.size() * threshold;
+    const float minFloor = std::floor(minDiv);
+    const std::uint32_t minSize = (minDiv - minFloor) < 0.0005 ? minFloor : std::ceil(minDiv);
+
+    // Hack allowing me to circumvent rounding issues...
+    const float maxDiv = record.size() / threshold;
+    const float maxFloor = std::floor(maxDiv);
+    const std::uint32_t maxSize = (maxDiv - maxFloor) > 0.9995f ? std::round(maxDiv) : maxFloor;
 
     for (std::uint32_t i = minSize; i <= maxSize; ++i) {
         allPairsForSize(record, i);
