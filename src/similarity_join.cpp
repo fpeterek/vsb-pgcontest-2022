@@ -26,7 +26,7 @@ void SimilarityJoin::allPairs(const Record & record) {
     const std::uint32_t minSize = std::ceil(record.size() * threshold);
 
     // Hack allowing me to circumvent rounding issues...
-    const std::uint32_t maxSize = (div - floor) > 0.9995f ? std::round(div) : floor;
+    const std::uint32_t maxSize = (div - floor) > 0.995f ? std::round(div) : floor;
 
     for (std::uint32_t i = minSize; i <= maxSize; ++i) {
         allPairsForSize(record, i);
