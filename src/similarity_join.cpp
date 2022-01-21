@@ -5,7 +5,6 @@
 #include "similarity_join.hpp"
 
 #include <cmath>
-#include <algorithm>
 
 
 SimilarityJoin::SimilarityJoin(const double threshold) : threshold(threshold) { }
@@ -21,8 +20,13 @@ void SimilarityJoin::add(const Record & record) {
 
 void SimilarityJoin::allPairs(const Record & record) {
 
+    const float div = record.size() / threshold;
+    const float floor = std::floor(div);
+
     const std::uint32_t minSize = std::ceil(record.size() * threshold);
-    const std::uint32_t maxSize = std::floor(record.size() / threshold);
+
+    // Hack allowing me to circumvent rounding issues...
+    const std::uint32_t maxSize = (div - floor) > 0.9995f ? std::round(div) : floor;
 
     for (std::uint32_t i = minSize; i <= maxSize; ++i) {
         allPairsForSize(record, i);

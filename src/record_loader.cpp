@@ -24,7 +24,7 @@ std::vector<Record> RecordLoader::loadRecords(const Query & q) {
 
     while (true) {
         uint32_t record_size;
-        file.read((char*) &record_size, sizeof(record_size));
+        file.read((char*)&record_size, sizeof(record_size));
         if (file.eof()) {
             break;
         }
