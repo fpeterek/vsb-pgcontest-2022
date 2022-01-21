@@ -6,6 +6,7 @@
 #include <chrono>
 #include <vector>
 #include <cassert>
+#include <mutex>
 
 #include "query.hpp"
 #include "record_loader.hpp"
@@ -36,13 +37,35 @@ int main(int, const char **) {
         queries.emplace_back(collection);
     }
 
-    for (const auto & query : queries) {
-        const auto records = rl.loadRecords(query);
+    struct ResultType {
+        size_t order;
+        uint64_t result;
+    };
+
+    std::vector<ResultType> results;
+    std::mutex resMutex;
+
+    #pragma omp parallel for default(none) shared(queries, results, resMutex)
+    for (size_t i = 0; i < queries.size(); ++i) {
+        const auto & query = queries[i];
+        const auto records = RecordLoader().loadRecords(query);
         SimilarityJoin sj { query.threshold };
         for (const auto & record : records) {
             sj.add(record);
         }
-        std::cout << sj.getResult() << std::endl;
+        try {
+            std::lock_guard lock(resMutex);
+            results.emplace_back(ResultType { i, sj.getResult() });
+        } catch (const std::exception & e) {
+            std::exit(-1);
+        }
+    }
+
+    std::sort(results.begin(), results.end(),
+              [](const ResultType & l, const ResultType & r) -> bool { return l.order < r.order; } );
+
+    for (const auto & res : results) {
+        std::cout << res.result << std::endl;
     }
 
     auto end = std::chrono::system_clock::now();
