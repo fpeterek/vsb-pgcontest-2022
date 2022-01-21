@@ -37,15 +37,11 @@ int main(int, const char **) {
         queries.emplace_back(collection);
     }
 
-    struct ResultType {
-        size_t order;
-        uint64_t result;
-    };
 
-    std::vector<ResultType> results;
-    std::mutex resMutex;
+    std::vector<std::uint64_t> results(queries.size(), 0);
+    // std::mutex resMutex;
 
-    #pragma omp parallel for default(none) shared(queries, results, resMutex)
+    #pragma omp parallel for default(none) shared(queries, results)
     for (size_t i = 0; i < queries.size(); ++i) {
         const auto & query = queries[i];
         const auto records = RecordLoader().loadRecords(query);
@@ -53,19 +49,10 @@ int main(int, const char **) {
         for (const auto & record : records) {
             sj.add(record);
         }
-        try {
-            std::lock_guard lock(resMutex);
-            results.emplace_back(ResultType { i, sj.getResult() });
-        } catch (const std::exception & e) {
-            std::exit(-1);
-        }
+        results[i] = sj.getResult();
     }
-
-    std::sort(results.begin(), results.end(),
-              [](const ResultType & l, const ResultType & r) -> bool { return l.order < r.order; } );
-
     for (const auto & res : results) {
-        std::cout << res.result << std::endl;
+        std::cout << res << std::endl;
     }
 
     auto end = std::chrono::system_clock::now();
