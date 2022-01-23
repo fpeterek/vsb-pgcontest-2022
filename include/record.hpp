@@ -15,6 +15,7 @@ class Record {
 public:
 
     std::size_t size() const;
+    bool empty() const;
     std::uint32_t operator[](std::size_t index) const;
 
     Record(std::vector<uint32_t> data);

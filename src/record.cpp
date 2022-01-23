@@ -24,5 +24,9 @@ std::size_t Record::size() const {
     return elements.size();
 }
 
+bool Record::empty() const {
+    return elements.empty();
+}
+
 
 

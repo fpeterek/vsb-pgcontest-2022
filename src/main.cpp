@@ -7,52 +7,75 @@
 #include <vector>
 #include <cassert>
 #include <mutex>
+#include <thread>
+
+#include <blockingconcurrentqueue.h>
 
 #include "query.hpp"
 #include "record_loader.hpp"
 #include "similarity_join.hpp"
 
 
-int main(int, const char **) {
-    // Turns off synchronization with C stdio for faster I/O performance
-    std::ios::sync_with_stdio(false);
+namespace mc = moodycamel;
+
+
+std::vector<Query> loadQueries() {
 
     std::string line;
     std::vector<Query> queries;
-    RecordLoader rl;
 
-    std::istream & in = std::cin;
-
-    auto start = std::chrono::system_clock::now();
-    while (std::getline(in, line)) {
+    while (std::getline(std::cin, line)) {
         Query collection;
 
         // Only Jaccard Index is supported for now
         assert(line == "JS");
 
-        std::getline(in, line);
+        std::getline(std::cin, line);
         collection.threshold = std::stof(line);
 
-        std::getline(in, collection.file);
+        std::getline(std::cin, collection.file);
         queries.emplace_back(collection);
     }
 
+    return queries;
+}
 
-    std::vector<std::uint64_t> results(queries.size(), 0);
-    // std::mutex resMutex;
+void loadRecords(Query & query, mc::BlockingConcurrentQueue<Record> & queue) {
+    RecordLoader rl { query, queue };
+    while (rl.loadQuery());
+    queue.enqueue(Record({}));
+}
 
-    #pragma omp parallel for default(none) shared(queries, results)
-    for (size_t i = 0; i < queries.size(); ++i) {
-        const auto & query = queries[i];
-        const auto records = RecordLoader().loadRecords(query);
+
+int main(int, const char **) {
+    // Turns off synchronization with C stdio for faster I/O performance
+    std::ios::sync_with_stdio(false);
+
+    std::vector<Query> queries = loadQueries();
+
+    auto start = std::chrono::system_clock::now();
+
+    for (auto & query : queries) {
+
+        mc::BlockingConcurrentQueue<Record> queue;
+        std::thread loaderThread(loadRecords, std::ref(query), std::ref(queue));
+
         SimilarityJoin sj { query.threshold };
-        for (const auto & record : records) {
-            sj.add(record);
+        Record rec {{}};
+
+        while (true) {
+            // std::cout << queue.size_approx() << std::endl;
+            queue.wait_dequeue(rec);
+
+            sj.add(rec);
+            if (rec.empty()) {
+                break;
+            }
         }
-        results[i] = sj.getResult();
-    }
-    for (const auto & res : results) {
-        std::cout << res << std::endl;
+
+        loaderThread.join();
+
+        std::cout << sj.getResult() << std::endl;
     }
 
     auto end = std::chrono::system_clock::now();

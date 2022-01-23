@@ -25,7 +25,7 @@ class SimilarityJoin {
 
     std::size_t result = 0;
 
-    void allPairsForSize(const Record & record, uint32_t size);
+    std::size_t allPairsForSize(const Record & record, uint32_t size);
     void allPairs(const Record & record);
 
 public:
