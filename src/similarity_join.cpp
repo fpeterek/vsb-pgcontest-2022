@@ -9,11 +9,14 @@
 #include <mutex>
 #include <iostream>
 
+#include <omp.h>
+
 
 SimilarityJoin::SimilarityJoin(const double threshold) : threshold(threshold) {
     for (std::uint32_t i = 1; i <= 50'000; ++i) {
         indices[i] = {};
     }
+    tableVector.resize(omp_get_max_threads());
 }
 
 uint64_t SimilarityJoin::getResult() const {
@@ -41,14 +44,14 @@ void SimilarityJoin::allPairs(const Record & record) {
 
     #pragma omp parallel for default(none) shared(minSize, maxSize, record, mutex, result, std::cout)
     for (std::uint32_t i = minSize; i <= maxSize; ++i) {
-        const auto subresult = allPairsForSize(record, i);
+        const auto subresult = allPairsForSize(record, i, omp_get_thread_num());
 
         std::lock_guard lock(mutex);
         result += subresult;
     }
 }
 
-std::size_t SimilarityJoin::allPairsForSize(const Record & record, const uint32_t size) {
+std::size_t SimilarityJoin::allPairsForSize(const Record & record, const uint32_t size, const uint32_t thread) {
     auto & index = indices[size];
     const auto numElements = index.items();
 
@@ -58,7 +61,7 @@ std::size_t SimilarityJoin::allPairsForSize(const Record & record, const uint32_
         return 0;
     }
 
-    std::vector<uint32_t> table;
+    std::vector<uint32_t> & table = tableVector[thread];
 
     if (table.size() > numElements) {
         std::fill(table.begin(), table.begin() + numElements, 0);
