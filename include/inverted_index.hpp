@@ -17,6 +17,7 @@
 class InvertedIndex {
 
     robin_hood::unordered_flat_map<uint32_t, std::vector<uint32_t>> map;
+    std::vector<uint32_t> sizes;
     uint32_t count = 0;
 
 public:
@@ -26,6 +27,8 @@ public:
     uint32_t items() const;
 
     const std::vector<uint32_t> & operator[](uint32_t key);
+
+    std::uint32_t sizeOf(uint32_t key);
 };
 
 

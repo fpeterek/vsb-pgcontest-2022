@@ -18,15 +18,17 @@
 class SimilarityJoin {
 
     // record size -> index
-    robin_hood::unordered_flat_map<uint32_t, InvertedIndex> indices;
+    std::vector<InvertedIndex> indices;
     // std::vector<uint32_t> table;
     std::vector<std::vector<uint32_t>> tableVector;
+
+    std::vector<std::pair<std::uint32_t, std::uint32_t>> splits;
 
     const double threshold;
 
     std::size_t result = 0;
 
-    std::size_t allPairsForSize(const Record & record, uint32_t size, uint32_t thread);
+    std::size_t allPairsForSize(const Record & record, uint32_t split, uint32_t thread);
     void allPairs(const Record & record);
 
 public:
@@ -35,6 +37,8 @@ public:
     uint64_t getResult() const;
 
     void add(const Record & record);
+
+    void printIndices() const;
 };
 
 #endif //VSBPGCONTEST21_SIMILARITY_JOIN_HPP

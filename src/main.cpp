@@ -40,10 +40,33 @@ std::vector<Query> loadQueries() {
     return queries;
 }
 
-void loadRecords(Query & query, mc::BlockingConcurrentQueue<Record> & queue) {
+void loadRecords(const Query & query, mc::BlockingConcurrentQueue<Record> & queue) {
     RecordLoader rl { query, queue };
     while (rl.loadQuery());
     queue.enqueue(Record({}));
+}
+
+void handleQuery(const Query & query) {
+
+    mc::BlockingConcurrentQueue<Record> queue;
+    std::thread loaderThread(loadRecords, std::ref(query), std::ref(queue));
+
+    SimilarityJoin sj { query.threshold };
+    Record rec {{}};
+
+    while (true) {
+        queue.wait_dequeue(rec);
+
+        sj.add(rec);
+        if (rec.empty()) {
+            break;
+        }
+    }
+
+    loaderThread.join();
+
+    // sj.printIndices();
+    std::cout << sj.getResult() << std::endl;
 }
 
 
@@ -56,26 +79,7 @@ int main(int, const char **) {
     auto start = std::chrono::system_clock::now();
 
     for (auto & query : queries) {
-
-        mc::BlockingConcurrentQueue<Record> queue;
-        std::thread loaderThread(loadRecords, std::ref(query), std::ref(queue));
-
-        SimilarityJoin sj { query.threshold };
-        Record rec {{}};
-
-        while (true) {
-            // std::cout << queue.size_approx() << std::endl;
-            queue.wait_dequeue(rec);
-
-            sj.add(rec);
-            if (rec.empty()) {
-                break;
-            }
-        }
-
-        loaderThread.join();
-
-        std::cout << sj.getResult() << std::endl;
+        handleQuery(query);
     }
 
     auto end = std::chrono::system_clock::now();
