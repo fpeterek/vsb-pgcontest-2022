@@ -18,9 +18,22 @@ namespace mc = moodycamel;
 
 class RecordLoader {
 
+    // 1 MB worth of 32 bit integers
+    static constexpr std::size_t bufferSize = 1024*1024*1024 / sizeof(std::uint32_t);
+
     std::ifstream in;
     mc::BlockingConcurrentQueue<Record> & queue;
-    uint32_t buffer[50'000]{};
+    // uint32_t buffer[50'000]{};
+    std::uint32_t * buffer;
+    std::uint32_t * dataPtr;
+
+    void loadToVector(std::vector<std::uint32_t> & dest, std::uint32_t toCopy);
+    void loadToBuffer();
+    std::uint32_t loadSize();
+
+    std::size_t availableItems() const;
+    bool isEmpty() const;
+    bool isFinished() const;
 
 public:
 
