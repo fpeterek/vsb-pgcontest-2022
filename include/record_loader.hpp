@@ -13,8 +13,6 @@
 
 #include "record.hpp"
 #include "query.hpp"
-#include "blocking_queue.hpp"
-#include "end.hpp"
 
 namespace mc = moodycamel;
 

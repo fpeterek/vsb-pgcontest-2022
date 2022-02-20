@@ -10,8 +10,15 @@ include_directories(include/ borrowed/)
 
 add_executable(
     contest
-    src/self_similarity_join.cpp
     include/record.hpp
     src/record.cpp
     borrowed/robin_hood.hpp
-    src/main.cpp include/query.hpp include/record_loader.hpp src/record_loader.cpp include/similarity_join.hpp src/similarity_join.cpp include/inverted_index.hpp src/inverted_index.cpp include/blocking_queue.hpp include/end.hpp)
+    src/main.cpp
+    include/query.hpp
+    include/record_loader.hpp
+    src/record_loader.cpp
+    include/similarity_join.hpp
+    src/similarity_join.cpp
+    include/inverted_index.hpp
+    src/inverted_index.cpp
+)
