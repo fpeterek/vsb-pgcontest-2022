@@ -7,4 +7,3 @@ benchmark:
     - /uploader/uploader similarity-join ./contest
   tags:
     - submission
-  when: manual

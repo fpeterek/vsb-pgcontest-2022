@@ -13,14 +13,6 @@ void InvertedIndex::add(const Record & record) {
     ++count;
 }
 
-/*bool InvertedIndex::attrHasRecord(const uint32_t attr, const uint32_t record) {
-    return map[attr].count(record);
-}
-
-bool InvertedIndex::recordHasAttr(uint32_t record, uint32_t attr) {
-    return attrHasRecord(attr, record);
-}*/
-
 uint32_t InvertedIndex::items() const {
     return count;
 }
