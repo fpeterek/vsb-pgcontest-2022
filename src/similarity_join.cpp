@@ -102,7 +102,7 @@ std::size_t SimilarityJoin::allPairsForSize(const Record & record, const uint32_
         table.resize(numElements, 0);
     }
 
-    // #pragma omp parallel for default(none) shared(record, index, table)
+    #pragma omp parallel for default(none) shared(record, index, table)
     for (std::size_t i = 0; i < record.size(); ++i) {
         const auto attribute = record[i];
         for (const auto item : index[attribute]) {
@@ -110,7 +110,7 @@ std::size_t SimilarityJoin::allPairsForSize(const Record & record, const uint32_
         }
     }
 
-    // #pragma omp parallel for reduction(+:sum) default(none) shared(record, index, table, numElements)
+    #pragma omp parallel for reduction(+:sum) default(none) shared(record, index, table, numElements)
     for (std::size_t i = 0; i < numElements; ++i) {
         const auto intersect = table[i];
         const auto unionSize = record.size() + index.sizeOf(i) - intersect;
