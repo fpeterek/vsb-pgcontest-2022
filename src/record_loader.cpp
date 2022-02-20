@@ -5,9 +5,9 @@
 #include "record_loader.hpp"
 
 #include <cmath>
-#include <fstream>
 #include <iostream>
 #include <algorithm>
+
 
 RecordLoader::RecordLoader(const Query & q, mc::BlockingConcurrentQueue<Record> & queue) :
     in(q.file), queue(queue) {
@@ -16,23 +16,20 @@ RecordLoader::RecordLoader(const Query & q, mc::BlockingConcurrentQueue<Record> 
         std::cerr << "Could not open " << q.file << std::endl;
         std::exit(1);
     }
-
-    buffer = new std::uint32_t[bufferSize];
-    dataPtr = buffer + bufferSize;
 }
 
 
 bool RecordLoader::loadQuery() {
 
-    uint32_t record_size = loadSize();
-
-    if (isFinished()) {
-        return false;
-    }
+    const uint32_t record_size = loadSize();
 
     // Ignore records of size 0
     if (not record_size) {
         return true;
+    }
+
+    if (isFinished()) {
+        return false;
     }
 
     auto toCopy = std::min(record_size, (std::uint32_t)availableItems());
@@ -57,13 +54,14 @@ bool RecordLoader::loadQuery() {
 }
 
 void RecordLoader::loadToVector(std::vector<std::uint32_t> & dest, const std::uint32_t toCopy) {
-    std::copy(dataPtr, dataPtr+toCopy, std::back_inserter(dest));
-    dataPtr += toCopy;
+    // std::cout << idx << " - " << idx+toCopy << std::endl;
+    std::copy(buffer.begin()+idx, buffer.begin()+idx+toCopy, std::back_inserter(dest));
+    idx += toCopy;
 }
 
 void RecordLoader::loadToBuffer() {
-    in.read((char*)buffer, bufferSize);
-    dataPtr = buffer;
+    in.read((char*)buffer.data(), bufferSize*sizeof(std::uint32_t));
+    idx = 0;
 }
 
 bool RecordLoader::isFinished() const {
@@ -71,18 +69,22 @@ bool RecordLoader::isFinished() const {
 }
 
 bool RecordLoader::isEmpty() const {
-    return dataPtr == buffer+bufferSize;
+    return idx >= lastRead();
 }
 
 std::size_t RecordLoader::availableItems() const {
-    return buffer + bufferSize - dataPtr;
+    return lastRead() - idx;
 }
 
 std::uint32_t RecordLoader::loadSize() {
     if (isEmpty()) {
         loadToBuffer();
     }
-    return *(dataPtr++);
+    return buffer[idx++];
+}
+
+std::uint32_t RecordLoader::lastRead() const {
+    return in.gcount() / sizeof(std::uint32_t);
 }
 
 
