@@ -47,15 +47,18 @@ void SimilarityJoin::add(const Record & record) {
 
 void SimilarityJoin::allPairs(const Record & record) {
 
+    constexpr float error = std::numeric_limits<float>::epsilon() * 2;
+    constexpr float oneMinusError = 1 - error;
+
     // Hack allowing me to circumvent rounding issues...
     const float minDiv = record.size() * threshold;
     const float minFloor = std::floor(minDiv);
-    const std::uint32_t minSize = (minDiv - minFloor) < 0.0005 ? minFloor : std::ceil(minDiv);
+    const std::uint32_t minSize = (minDiv - minFloor) < error ? minFloor : std::ceil(minDiv);
 
     // Hack allowing me to circumvent rounding issues...
     const float maxDiv = record.size() / threshold;
     const float maxFloor = std::floor(maxDiv);
-    const std::uint32_t maxSize = (maxDiv - maxFloor) > 0.9995f ? std::round(maxDiv) : maxFloor;
+    const std::uint32_t maxSize = (maxDiv - maxFloor) > oneMinusError ? std::round(maxDiv) : maxFloor;
 
     std::mutex mutex;
 
