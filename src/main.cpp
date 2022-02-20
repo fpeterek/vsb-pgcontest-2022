@@ -40,26 +40,29 @@ std::vector<Query> loadQueries() {
     return queries;
 }
 
-void loadRecords(const Query & query, mc::BlockingConcurrentQueue<Record> & queue) {
+void loadRecords(const Query & query, mc::BlockingConcurrentQueue<std::vector<Record>> & queue) {
     RecordLoader rl { query, queue };
-    while (rl.loadQuery());
-    queue.enqueue(Record({}));
+    while (rl.loadQueries());
+    queue.enqueue(std::vector<Record>{});
 }
 
 void handleQuery(const Query & query) {
 
-    mc::BlockingConcurrentQueue<Record> queue;
+    mc::BlockingConcurrentQueue<std::vector<Record>> queue;
     std::thread loaderThread(loadRecords, std::ref(query), std::ref(queue));
 
     SimilarityJoin sj { query.threshold };
-    Record rec {{}};
+    std::vector<Record> records {};
 
     while (true) {
-        queue.wait_dequeue(rec);
+        queue.wait_dequeue(records);
 
-        sj.add(rec);
-        if (rec.empty()) {
+        if (records.empty()) {
             break;
+        }
+
+        for (const auto & rec : records) {
+            sj.add(rec);
         }
     }
 

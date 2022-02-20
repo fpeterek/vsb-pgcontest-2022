@@ -19,14 +19,16 @@ namespace mc = moodycamel;
 class RecordLoader {
 
     std::ifstream in;
-    mc::BlockingConcurrentQueue<Record> & queue;
+    mc::BlockingConcurrentQueue<std::vector<Record>> & queue;
     uint32_t buffer[50'000]{};
+    std::vector<Record> records;
 
 public:
 
-    RecordLoader(const Query & q, mc::BlockingConcurrentQueue<Record> & queue);
+    RecordLoader(const Query & q, mc::BlockingConcurrentQueue<std::vector<Record>> & queue);
 
     bool loadQuery();
+    bool loadQueries();
 };
 
 #endif //VSBPGCONTEST21_RECORD_LOADER_HPP

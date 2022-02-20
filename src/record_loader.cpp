@@ -8,7 +8,7 @@
 #include <iostream>
 #include <algorithm>
 
-RecordLoader::RecordLoader(const Query & q, mc::BlockingConcurrentQueue<Record> & queue) :
+RecordLoader::RecordLoader(const Query & q, mc::BlockingConcurrentQueue<std::vector<Record>> & queue) :
     in(q.file), queue(queue) {
 
     if (not in) {
@@ -38,9 +38,29 @@ bool RecordLoader::loadQuery() {
     std::sort(vec.begin(), vec.end());
     vec.erase(std::unique(vec.begin(), vec.end()), vec.end());
 
-    queue.enqueue(Record(std::move(vec)));
+    records.emplace_back(std::move(vec));
 
     return true;
+}
+
+bool RecordLoader::loadQueries() {
+    bool res = true;
+
+    constexpr size_t batch_size = 128;
+
+    records.reserve(batch_size);
+
+    for (int i = 0; i < batch_size; ++i) {
+        if (not loadQuery()) {
+            res = false;
+            break;
+        }
+    }
+
+    queue.enqueue(std::move(records));
+    records = std::vector<Record>();
+
+    return res;
 }
 
 
