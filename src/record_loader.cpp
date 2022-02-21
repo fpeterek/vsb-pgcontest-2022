@@ -20,20 +20,29 @@ RecordLoader::RecordLoader(const Query & q, mc::BlockingConcurrentQueue<std::vec
 
 bool RecordLoader::loadQuery() {
 
-    uint32_t record_size;
-    in.read((char*)&record_size, sizeof(record_size));
-    if (in.eof()) {
-        return false;
-    }
+    const uint32_t record_size = loadSize();
 
     // Ignore records of size 0
     if (not record_size) {
         return true;
     }
 
-    in.read((char*)buffer, sizeof(uint32_t) * record_size);
+    if (isFinished()) {
+        return false;
+    }
 
-    std::vector<uint32_t> vec { buffer, buffer+record_size };
+    auto toCopy = std::min(record_size, (std::uint32_t)availableItems());
+
+    std::vector<uint32_t> vec;
+    vec.reserve(record_size);
+
+    loadToVector(vec, toCopy);
+
+    if (toCopy < record_size) {
+        toCopy = record_size - toCopy;
+        loadToBuffer();
+        loadToVector(vec, toCopy);
+    }
 
     std::sort(vec.begin(), vec.end());
     vec.erase(std::unique(vec.begin(), vec.end()), vec.end());
@@ -50,7 +59,7 @@ bool RecordLoader::loadQueries() {
 
     records.reserve(batch_size);
 
-    for (int i = 0; i < batch_size; ++i) {
+    for (size_t i = 0; i < batch_size; ++i) {
         if (not loadQuery()) {
             res = false;
             break;
@@ -61,6 +70,40 @@ bool RecordLoader::loadQueries() {
     records = std::vector<Record>();
 
     return res;
+}
+
+void RecordLoader::loadToVector(std::vector<std::uint32_t> & dest, const std::uint32_t toCopy) {
+    // std::cout << idx << " - " << idx+toCopy << std::endl;
+    std::copy(buffer.begin()+idx, buffer.begin()+idx+toCopy, std::back_inserter(dest));
+    idx += toCopy;
+}
+
+void RecordLoader::loadToBuffer() {
+    in.read((char*)buffer.data(), bufferSize*sizeof(std::uint32_t));
+    idx = 0;
+}
+
+bool RecordLoader::isFinished() const {
+    return isEmpty() and in.eof();
+}
+
+bool RecordLoader::isEmpty() const {
+    return idx >= lastRead();
+}
+
+std::size_t RecordLoader::availableItems() const {
+    return lastRead() - idx;
+}
+
+std::uint32_t RecordLoader::loadSize() {
+    if (isEmpty()) {
+        loadToBuffer();
+    }
+    return buffer[idx++];
+}
+
+std::uint32_t RecordLoader::lastRead() const {
+    return in.gcount() / sizeof(std::uint32_t);
 }
 
 
