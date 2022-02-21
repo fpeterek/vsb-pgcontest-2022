@@ -24,7 +24,7 @@ class RecordLoader {
     std::ifstream in;
     mc::BlockingConcurrentQueue<std::vector<Record>> & queue;
     std::vector<Record> records;
-    std::array<std::uint32_t, bufferSize> buffer;
+    std::array<std::uint32_t, bufferSize> buffer {};
     std::size_t idx = bufferSize;
 
     void loadToVector(std::vector<std::uint32_t> & dest, std::uint32_t toCopy);
