@@ -66,9 +66,7 @@ bool RecordLoader::loadQueries() {
         }
     }
 
-    if (records.size()) {
-        queue.enqueue(std::move(records));
-    }
+    queue.enqueue(std::move(records));
     records = std::vector<Record>();
 
     return res;
