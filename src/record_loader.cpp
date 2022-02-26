@@ -68,8 +68,8 @@ bool RecordLoader::loadQueries() {
 
     if (records.size()) {
         queue.enqueue(std::move(records));
-        records = std::vector<Record>();
     }
+    records = std::vector<Record>();
 
     return res;
 }
@@ -86,7 +86,7 @@ void RecordLoader::loadToBuffer() {
 }
 
 bool RecordLoader::isFinished() const {
-    return isEmpty() and lastRead() < buffer.size(); // and (not in or in.eof());
+    return isEmpty() and in.eof();
 }
 
 bool RecordLoader::isEmpty() const {
