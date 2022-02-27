@@ -22,13 +22,13 @@ bool RecordLoader::loadQuery() {
 
     const uint32_t record_size = loadSize();
 
+    if (isFinished()) {
+        return false;
+    }
+
     // Ignore records of size 0
     if (not record_size) {
         return true;
-    }
-
-    if (isFinished()) {
-        return false;
     }
 
     auto toCopy = std::min(record_size, (std::uint32_t)availableItems());
