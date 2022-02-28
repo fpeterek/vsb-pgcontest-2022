@@ -14,6 +14,9 @@
 
 SimilarityJoin::SimilarityJoin(const double threshold) : threshold(threshold) {
     tableVector.resize(omp_get_max_threads());
+    for (auto & table : tableVector) {
+        table.resize(1'000'000, 0);
+    }
 
     splits.emplace_back(std::pair { 1u, 1u });
 
@@ -95,12 +98,13 @@ std::size_t SimilarityJoin::allPairsForSize(const Record & record, const uint32_
 
     std::vector<uint32_t> & table = tableVector[thread];
 
-    if (table.size() > numElements) {
+    std::fill(table.begin(), table.begin() + numElements, 0);
+    /*if (table.size() > numElements) {
         std::fill(table.begin(), table.begin() + numElements, 0);
     } else {
         std::fill(table.begin(), table.end(), 0);
         table.resize(numElements, 0);
-    }
+    }*/
 
     // #pragma omp parallel for default(none) shared(record, index, table)
     for (std::size_t i = 0; i < record.size(); ++i) {
