@@ -18,7 +18,7 @@ SimilarityJoin::SimilarityJoin(const double threshold) : threshold(threshold) {
     splits.emplace_back(std::pair { 1u, 1u });
 
     uint32_t last = 1;
-    const double splitRatio = threshold + (1 - threshold)/2;
+    const double splitRatio = threshold + (1 - threshold)*0.7;
     while (last < 50'000) {
         const auto begin = last+1;
         const auto end = std::min(std::uint32_t(begin / splitRatio), 50'000u);
