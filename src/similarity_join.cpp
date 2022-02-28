@@ -63,8 +63,6 @@ void SimilarityJoin::allPairs(const Record & record) {
     const float maxFloor = std::floor(maxDiv);
     const std::uint32_t maxSize = (maxDiv - maxFloor) > oneMinusError ? std::round(maxDiv) : maxFloor;
 
-    std::mutex mutex;
-
     size_t begin = 0;
     size_t end = 0;
 
@@ -77,13 +75,13 @@ void SimilarityJoin::allPairs(const Record & record) {
         }
     }
 
-    #pragma omp parallel for default(none) shared(begin, end, record, mutex, result, std::cout)
+    std::size_t subresult = 0;
+    #pragma omp parallel for reduction(+:subresult) default(none) shared(begin, end, record, result, std::cout)
     for (std::uint32_t i = begin; i <= end; ++i) {
-        const auto subresult = allPairsForSize(record, i, omp_get_thread_num());
-
-        std::lock_guard lock(mutex);
-        result += subresult;
+        subresult += allPairsForSize(record, i, omp_get_thread_num());
     }
+
+    result += subresult;
 }
 
 std::size_t SimilarityJoin::allPairsForSize(const Record & record, const uint32_t split, const uint32_t thread) {
