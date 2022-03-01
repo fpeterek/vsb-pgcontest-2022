@@ -1,10 +1,11 @@
 # FOSS libraries
 
 In my solution, I utilized the following open source libraries, and thus, I want to give
-credit the creators who helped me immensely when implementing my solution.
+credit to the creators who helped me immensely when implementing my solution.
 
-https://github.com/martinus/robin-hood-hashing
-https://github.com/cameron314/concurrentqueue
+* https://github.com/martinus/robin-hood-hashing
+
+* https://github.com/cameron314/concurrentqueue
 
 ---
 
