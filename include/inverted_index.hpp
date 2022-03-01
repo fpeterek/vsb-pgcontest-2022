@@ -21,12 +21,17 @@ class InvertedIndex {
     uint32_t count = 0;
 
 public:
+    typedef decltype(map)::const_iterator const_iterator;
     void add(const Record & record);
     // bool attrHasRecord(uint32_t attr, uint32_t record);
     // bool recordHasAttr(uint32_t record, uint32_t attr);
     uint32_t items() const;
 
     const std::vector<uint32_t> & operator[](uint32_t key);
+
+    const_iterator find(uint32_t key) const;
+    const_iterator cbegin() const;
+    const_iterator cend() const;
 
     std::uint32_t sizeOf(uint32_t key);
 };

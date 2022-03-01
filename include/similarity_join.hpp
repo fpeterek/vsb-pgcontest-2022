@@ -19,10 +19,10 @@ class SimilarityJoin {
 
     // record size -> index
     std::vector<InvertedIndex> indices;
-    // std::vector<uint32_t> table;
     std::vector<std::vector<uint32_t>> tableVector;
 
     std::vector<std::pair<std::uint32_t, std::uint32_t>> splits;
+    std::vector<std::uint32_t> splitCounters;
 
     const double threshold;
 
@@ -37,6 +37,7 @@ public:
     uint64_t getResult() const;
 
     void add(const Record & record);
+    void index(const Record & record);
 
     void printIndices() const;
 };

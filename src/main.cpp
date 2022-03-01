@@ -52,7 +52,9 @@ void handleQuery(const Query & query) {
     std::thread loaderThread(loadRecords, std::ref(query), std::ref(queue));
 
     SimilarityJoin sj { query.threshold };
-    std::vector<Record> records {};
+    std::vector<Record> records;
+    std::vector<Record> allRecords;
+    allRecords.reserve(1'000'000);
 
     while (true) {
         queue.wait_dequeue(records);
@@ -62,11 +64,19 @@ void handleQuery(const Query & query) {
         }
 
         for (const auto & rec : records) {
-            sj.add(rec);
+            sj.index(rec);
+        }
+
+        for (auto & r : records) {
+            allRecords.emplace_back(std::move(r));
         }
     }
 
     loaderThread.join();
+
+    for (const auto & r : allRecords) {
+        sj.add(r);
+    }
 
     // sj.printIndices();
     std::cout << sj.getResult() << std::endl;

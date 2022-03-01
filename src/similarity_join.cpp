@@ -6,7 +6,6 @@
 
 #include <cmath>
 #include <functional>
-#include <mutex>
 #include <iostream>
 
 #include <omp.h>
@@ -27,25 +26,29 @@ SimilarityJoin::SimilarityJoin(const double threshold) : threshold(threshold) {
         const auto end = std::min(std::uint32_t(begin / splitRatio), 50'000u);
         splits.emplace_back(std::pair { begin, end });
         last = end;
-        indices.emplace_back();
     }
+
+    indices.resize(splits.size());
+    splitCounters.resize(splits.size(), 0u);
 }
 
 uint64_t SimilarityJoin::getResult() const {
     return result;
 }
 
-void SimilarityJoin::add(const Record & record) {
-    allPairs(record);
+void SimilarityJoin::index(const Record & record) {
     size_t split = 0;
-    while (true) {
+    for (; split < splits.size(); ++split) {
         const auto & [begin, end] = splits[split];
-        if (record.size() < begin) {
+        if (begin <= record.size() and record.size() <= end) {
             break;
         }
-        ++split;
     }
     indices[split].add(record);
+}
+
+void SimilarityJoin::add(const Record & record) {
+    allPairs(record);
 }
 
 void SimilarityJoin::allPairs(const Record & record) {
@@ -86,34 +89,37 @@ void SimilarityJoin::allPairs(const Record & record) {
 
 std::size_t SimilarityJoin::allPairsForSize(const Record & record, const uint32_t split, const uint32_t thread) {
     auto & index = indices[split];
-    const auto numElements = index.items();
+    const auto lastIdx = splitCounters[split];
+    if (splits[split].first <= record.size() and record.size() <= splits[split].second) {
+        ++splitCounters[split];
+    }
 
     std::size_t sum = 0;
 
-    if (not numElements) {
+    if (not lastIdx) {
         return 0;
     }
 
-    std::vector<uint32_t> & table = tableVector[thread];
+    auto & table = tableVector[thread];
 
-    std::fill(table.begin(), table.begin() + numElements, 0);
-    /*if (table.size() > numElements) {
-        std::fill(table.begin(), table.begin() + numElements, 0);
-    } else {
-        std::fill(table.begin(), table.end(), 0);
-        table.resize(numElements, 0);
-    }*/
+    std::fill(table.begin(), table.begin() + lastIdx, 0);
 
-    // #pragma omp parallel for default(none) shared(record, index, table)
+    // #pragma omp parallel for default(none) shared(record, index, table, lastIdx)
     for (std::size_t i = 0; i < record.size(); ++i) {
         const auto attribute = record[i];
-        for (const auto item : index[attribute]) {
-            ++table[item];
+        const auto & iter = index.find(attribute);
+        if (iter != index.cend()) {
+            for (const auto item : iter->second) {
+                if (item >= lastIdx) {
+                    break;
+                }
+                ++table[item];
+            }
         }
     }
 
-    // #pragma omp parallel for reduction(+:sum) default(none) shared(record, index, table, numElements)
-    for (std::size_t i = 0; i < numElements; ++i) {
+    // #pragma omp parallel for reduction(+:sum) default(none) shared(record, index, table, numElements, lastIdx)
+    for (std::size_t i = 0; i < lastIdx; ++i) {
         const auto intersect = table[i];
         const auto unionSize = record.size() + index.sizeOf(i) - intersect;
         const float jaccard = (float)intersect / unionSize;
@@ -133,5 +139,8 @@ void SimilarityJoin::printIndices() const {
             std::cout << size << ": " << index.items() << std::endl;
         }
         ++size;
+    }
+    for (const auto & c : splitCounters) {
+        std::cout << "Split: " << c << std::endl;
     }
 }

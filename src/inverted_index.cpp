@@ -24,3 +24,15 @@ const std::vector<uint32_t> & InvertedIndex::operator[](const uint32_t key) {
 std::uint32_t InvertedIndex::sizeOf(uint32_t key) {
     return sizes[key];
 }
+
+InvertedIndex::const_iterator InvertedIndex::find(const uint32_t key) const {
+    return map.find(key);
+}
+
+InvertedIndex::const_iterator InvertedIndex::cbegin() const {
+    return map.cbegin();
+}
+
+InvertedIndex::const_iterator InvertedIndex::cend() const {
+    return map.cend();
+}
