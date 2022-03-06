@@ -128,3 +128,10 @@ fabric.properties
 *.swp
 # workloads/
 
+*.aux
+*.log
+*.nav
+*.out
+*.snm
+*.toc
+
